@@ -29,9 +29,43 @@ void GainAdminPrivileges(UINT idd, BOOL bWait){
 /* The 'main' function of Win32 GUI programs: this is where execution starts */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     cmdline = lpCmdLine;
-    if (strcmp(lpCmdLine, "-i") == 0 || strcmp(lpCmdLine, "su") == 0 || strcmp(lpCmdLine, "") == 0) {
+    LPSTR tmpstr;
+    LPSTR currentpath;
+    GetModuleFileName(NULL, currentpath, MAX_PATH*10);//GetCurrentDirectory(MAX_PATH*10, currentpath);
+    LPSTR tmppath;
+    sprintf(tmppath, "%s\\..\\settings.ini", currentpath);
+    if (strcmp(lpCmdLine, "-i") == 0 || strcmp(lpCmdLine, "su") == 0) {
         strcpy(cmdline, (char*)"cmd.exe");
     }
-    GainAdminPrivileges(1, 0);
+    if (strcmp(lpCmdLine, "") == 0) {
+        printf("usage: sudo -i | su | --help | --version\nusage: sudo [filename]\n");
+        return 0;
+    }
+    if (strcmp(lpCmdLine, "--version") == 0) {
+        GetPrivateProfileString(TEXT("VERSIONINFO"), TEXT("SUDOVER"), TEXT("Unknown"), tmpstr, 100, TEXT(tmppath));
+        printf("WinSudo by EricNTH.\nView this project on Github: https://github.com/EricNTH080103/WinSudo/\nSudoVersion: %s.\n",tmpstr);
+        return 0;
+    }
+    if (strcmp(lpCmdLine, "--wait false") == 0 || strcmp(lpCmdLine, "-w false") == 0) {
+        WritePrivateProfileString("BASIC", "WAIT", "0", tmppath);
+        return 0;
+    }
+    if (strcmp(lpCmdLine, "--wait true") == 0 || strcmp(lpCmdLine, "-w true") == 0) {
+        WritePrivateProfileString("BASIC", "WAIT", "1", tmppath);
+        return 0;
+    }
+    if (strcmp(lpCmdLine, "--wait") == 0 || strcmp(lpCmdLine, "-w") == 0) {
+        WritePrivateProfileString("BASIC", "WAIT", "1", tmppath);
+        return 0;
+    }
+    if (strcmp(lpCmdLine, "--help") == 0) {
+        printf("usage: sudo -i | su: Execute command shell in administrator mode.\n\
+sudo [filename]: Execute that file in administrator mode.\n\
+sudo --version: Show version information.\n\
+sudo -w | --wait [true | false]: Set wait. Default: true (If true/false not given). Last as long as you don't change this value.\n\
+sudo --help: Show this help.\n");
+        return 0;
+    }
+    GainAdminPrivileges(GetPrivateProfileInt(TEXT("BASIC"), TEXT("IDD"), 3, TEXT(tmppath)), GetPrivateProfileInt(TEXT("BASIC"), TEXT("WAIT"), 2, TEXT(tmppath)));
     return 0;
 }
